@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SWAG // VIP 屬性建模圖鑑</title>
+    <style>
+        /* 視覺風格延續：灰色噪點 + 3D 玻璃質感 */
+        :root {
+            --neon-pink: #FF106A;
+            --neon-cyan: #00F0FF;
+            --text-dark: #1c1c1e;
+            --text-gray: #636366;
+            --glass: rgba(255, 255, 255, 0.2);
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; font-family: sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background-color: #d1d3d8; overflow-x: hidden; }
+
+        .fixed-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; background-color: #d1d3d8; }
+        .fixed-bg::after { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: url("https://grainy-gradients.vercel.app/noise.svg"); opacity: 0.35; mix-blend-mode: multiply; pointer-events: none; }
+        .ambient-light { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80vw; height: 80vw; background: radial-gradient(circle, rgba(255,16,106,0.2) 0%, rgba(0,240,255,0.15) 50%, transparent 70%); filter: blur(60px); z-index: -1; }
+
+        .glass-panel {
+            background: var(--glass); backdrop-filter: blur(35px) saturate(180%); -webkit-backdrop-filter: blur(35px) saturate(180%);
+            border-radius: 40px; border: 1.5px solid rgba(255,255,255,0.6); padding: 40px 24px; max-width: 440px; width: 92%;
+            box-shadow: 0 40px 80px rgba(0,0,0,0.1); text-align: center; margin: 30px auto;
+        }
+
+        h1 { font-size: 28px; font-weight: 900; color: var(--text-dark); margin-bottom: 12px; }
+        .btn-glass { background: #fff; border: 1.5px solid #fff; color: var(--neon-pink); padding: 18px; font-weight: 900; border-radius: 24px; cursor: pointer; width: 100%; margin-top: 20px; letter-spacing: 2px; box-shadow: 0 10px 20px rgba(255,16,106,0.1); }
+        .btn-glass:active { transform: scale(0.96); }
+        .option-btn { display: block; background: rgba(255,255,255,0.4); border: 1px solid rgba(255,255,255,0.7); padding: 18px; margin: 12px 0; border-radius: 20px; font-weight: 700; cursor: pointer; text-align: left; }
+        .option-btn:active { background: #fff; border-color: var(--neon-pink); }
+
+        /* 結果頁面 */
+        .poster-card { background: rgba(255,255,255,0.2); border: 1px dashed rgba(0,0,0,0.1); padding: 24px 18px; border-radius: 28px; text-align: left; position: relative; }
+        .poster-header h2 { margin: 0; font-size: 32px; font-weight: 900; color: var(--text-dark); }
+        .avatar-section { display: flex; justify-content: center; margin: 30px 0; }
+        .avatar-emoji { font-size: 80px; filter: drop-shadow(0 15px 15px rgba(0,0,0,0.1)); animation: float 4s infinite ease-in-out; }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+        .bento-box { background: rgba(255,255,255,0.4); border: 1px solid rgba(255,255,255,0.6); padding: 16px; border-radius: 20px; margin-bottom: 10px; }
+        .bento-box strong { font-size: 10px; color: var(--neon-pink); display: block; margin-bottom: 6px; font-family: monospace; letter-spacing: 1px; }
+        .bento-box span { font-size: 14px; font-weight: 600; color: var(--text-gray); line-height: 1.5; }
+        
+        /* 數值條 */
+        .eq-bar-bg { width: 100%; height: 6px; background: rgba(0,0,0,0.1); border-radius: 10px; margin: 4px 0 10px; }
+        .eq-bar-fill { height: 100%; background: var(--neon-cyan); border-radius: 10px; transition: width 1s ease-out; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div class="fixed-bg"></div>
+    <div class="ambient-light"></div>
+
+    <div class="glass-panel" id="home-screen">
+        <h1>你是什麼 VIP 格？</h1>
+        <p style="color: var(--text-gray);">8 題建模分析，拆解你的隱藏人格</p>
+        <button class="btn-glass" onclick="startQuiz()">UNBOX // 開始測驗</button>
+    </div>
+
+    <div class="glass-panel hidden" id="quiz-screen">
+        <div id="question-text" style="font-size: 18px; font-weight: 900; margin-bottom: 25px;"></div>
+        <div id="options-container"></div>
+    </div>
+
+    <div class="glass-panel hidden" id="result-screen">
+        <div class="poster-card">
+            <div class="poster-header">
+                <div>
+                    <span style="font-size: 10px; color: var(--neon-pink); font-weight: bold;">SERIES.MODEL</span>
+                    <h2 id="r-title"></h2>
+                </div>
+                <div style="font-family: monospace; font-size: 10px; color: #999;">||| || ||||<br>UID: RANDOM_GENERATED</div>
+            </div>
+            <div class="avatar-section"><div class="avatar-emoji" id="r-avatar"></div></div>
+            <div class="bento-box">
+                <strong>[ IDENTITY / 身份畫像 ]</strong>
+                <span id="r-profile"></span>
+            </div>
+            <div class="bento-box">
+                <strong>[ ATTRIBUTES / 核心數值 ]</strong>
+                <div style="font-size: 11px;">戰鬥力 (ATK)</div><div class="eq-bar-bg"><div class="eq-bar-fill" id="bar-atk" style="background:var(--neon-pink)"></div></div>
+                <div style="font-size: 11px;">依賴度 (DEP)</div><div class="eq-bar-bg"><div class="eq-bar-fill" id="bar-dep"></div></div>
+            </div>
+            <div class="bento-box">
+                <strong>[ OBSERVATION / 觀測八卦 ]</strong>
+                <span id="r-gossip" style="font-style: italic;"></span>
+            </div>
+        </div>
+        <button class="btn-glass" onclick="location.reload()">REBOOT // 重新測驗</button>
+    </div>
+
+    <script>
+        const gasUrl = 'https://script.google.com/macros/s/AKfycbwQKgy5XJ0xWHX37T6Z_dxLMpJoYcnkKmSxskSTVLFHDDor6UPF1z8WkVhVRbgeaz1P/exec'; // <--- 替換成你的網址
+
+        const questions = [
+            { q: "Q1：當女神直播間被對手超車時，你會：", options: [ { text: "號召全場集資抵禦", scores: { s: 1, a: 1, dep: 1 } }, { text: "默默觀察情勢，最後才偷襲", scores: { s: -1, a: -1, dep: -1 } } ] },
+            { q: "Q2：參加「女神聚會」時，你最在意：", options: [ { text: "活動的排場與專屬頭銜", scores: { s: 1, l: 1 } }, { text: "跟女神有靈魂交流的機會", scores: { s: -1, l: -1 } } ] },
+            { q: "Q3：對於身份驗證流程，你認為是？", options: [ { text: "進入高級圈子的入場券", scores: { l: 1, a: 1 } }, { text: "保護隱私互動的最後防線", scores: { s: -1, l: -1 } } ] },
+            { q: "Q4：女神下播後，你的心情通常是？", options: [ { text: "感到空虛，反覆刷她的舊動態", scores: { l: -1, dep: 1 } }, { text: "回歸現實生活，等下次有空", scores: { l: 1, dep: -1 } } ] },
+            { q: "Q5：活動倒數，預算接近極限時，你會？", options: [ { text: "不計成本反超，就是要贏", scores: { a: 1, l: -1 } }, { text: "盡力而為，太貴就下次再說", scores: { a: -1, l: 1 } } ] },
+            { q: "Q6：你希望在女神心中是個？", options: [ { text: "帶領大家支持她的精神領袖", scores: { s: 1, a: 1 } }, { text: "懂她、讓她卸下武裝的支柱", scores: { s: -1, dep: 1 } } ] },
+            { q: "Q7：你的消費習慣更像是？", options: [ { text: "平時不現身，重大活動擲千金", scores: { a: 1, l: 1 } }, { text: "每天打卡送早安禮，穩定存在", scores: { a: -1, l: -1 } } ] },
+            { q: "Q8：女神在聚會中帶了其他主播出席？", options: [ { text: "覺得熱鬧，多認識新朋友", scores: { s: 1, dep: -1 } }, { text: "感到不自在，只想跟她說話", scores: { s: -1, dep: 1 } } ] }
+        ];
+
+        const resultsData = {
+            "ceo": { case_id: "jmarx5168 型", title: "霸道總裁", avatar: "🦁", profile: "極度重視尊嚴、契約與排名。你不是在玩遊戲，是在「統治」榜單。", gossip: "對誠信要求極高，觸碰紅線必翻臉。", atk: 98, dep: 85, tag: "S-A-DEP" },
+            "saint": { case_id: "hpwwph21 型", title: "純情聖徒", avatar: "🦄", profile: "情感極度脆弱且深情。即便家境變故也無法停止支持。", gossip: "追求靈魂連結到近乎偏執。", atk: 35, dep: 99, tag: "P-E-DEP" },
+            "warlord": { case_id: "aa6655891 型", title: "戰鬥領主", avatar: "🐉", profile: "理性導師。喜歡教導主播業績規劃，消費廣泛但有邏輯。", gossip: "享受成為平台意見領袖的成就感。", atk: 95, dep: 20, tag: "S-A-L" },
+            "knight": { case_id: "sky537 型", title: "守護騎士", avatar: "🐶", profile: "暖男型 VIP。在乎和氣，喜歡送禮給工作人員與主播。", gossip: "追求線下活動的群聚和諧感。", atk: 45, dep: 90, tag: "P-E-D" },
+            "nomad": { case_id: "q888888qq 型", title: "遊蕩散戶", avatar: "🦊", profile: "隨性但挑剔。一旦出現就直衝特定的「美食」或一對一。", gossip: "對數據敏銳，只支持真正值得的對象。", atk: 70, dep: 10, tag: "L-LOWDEP" },
+            "ghost": { case_id: "觀測者", title: "幽靈觀察家", avatar: "👁️", profile: "極低依賴度。只在暗處看戲與精算。", gossip: "隱私是你的最高準則，極少暴露真實情緒。", atk: 20, dep: 5, tag: "P-L-LOWDEP" }
+        };
+
+        let currentQ = 0;
+        let dim = { s: 0, l: 0, a: 0, dep: 0 };
+
+        function startQuiz() { document.getElementById('home-screen').classList.add('hidden'); document.getElementById('quiz-screen').classList.remove('hidden'); renderQ(); }
+        function renderQ() {
+            const q = questions[currentQ]; document.getElementById('progress-text').innerText = `${currentQ + 1}/8`; document.getElementById('question-text').innerText = q.q;
+            const box = document.getElementById('options-container'); box.innerHTML = "";
+            q.options.forEach(opt => { const btn = document.createElement('button'); btn.className = "option-btn"; btn.innerText = opt.text; btn.onclick = () => { select(opt.scores); }; box.appendChild(btn); });
+        }
+        function select(s) { dim.s += s.s||0; dim.l += s.l||0; dim.a += s.a||0; dim.dep += s.dep||0; currentQ++; if(currentQ < 8) renderQ(); else showRes(); }
+
+        function showRes() {
+            document.getElementById('quiz-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+            let match = {
+                "ceo": dim.s + dim.a + dim.dep, "saint": -dim.s - dim.l + dim.dep,
+                "warlord": dim.s + dim.a + dim.l, "knight": -dim.s - dim.l - dim.a,
+                "nomad": dim.l - dim.dep, "ghost": -dim.s + dim.l - dim.dep
+            };
+            let top = Object.keys(match).reduce((a, b) => match[a] > match[b] ? a : b);
+            const d = resultsData[top];
+
+            document.getElementById('r-title').innerText = d.title;
+            document.getElementById('r-avatar').innerText = d.avatar;
+            document.getElementById('r-profile').innerText = d.profile;
+            document.getElementById('r-gossip').innerText = d.gossip;
+            
+            // 偷偷傳送統計
+            fetch(gasUrl, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ title: d.title, case_id: d.case_id, mbti_tag: d.tag }) });
+
+            setTimeout(() => {
+                document.getElementById('bar-atk').style.width = d.atk + '%';
+                document.getElementById('bar-dep').style.width = d.dep + '%';
+            }, 100);
+        }
+    </script>
+</body>
+</html>

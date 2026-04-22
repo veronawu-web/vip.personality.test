@@ -148,7 +148,6 @@
 
     <!-- 測驗頁面 -->
     <div class="glass-panel hidden" id="quiz-screen">
-        <!-- 修復點：確保這裡有 progress-text 可以被 JS 抓到 -->
         <div style="font-family: monospace; font-size: 11px; color: var(--neon-pink); font-weight: bold; margin-bottom: 15px; letter-spacing: 2px;">
             SYS.SCANNING [<span id="progress-text">1/8</span>]
         </div>
@@ -170,7 +169,8 @@
                 </div>
                 <div class="barcode-area">
                     <span style="font-size: 14px;">||| | || ||||</span><br>
-                    UID: <span id= 201608 ></span>
+                    <!-- BUG修復：把 id= 201608 改回 random-id，若你需要固定數字可以寫在 JS 裡 -->
+                    UID: <span id="random-id"></span>
                 </div>
             </div>
 
@@ -192,8 +192,9 @@
                         <div class="eq-bar-bg"><div class="eq-bar-fill" id="eq-atk" style="width: 0%; background: var(--neon-pink);"></div></div>
                         <span class="eq-val" id="val-atk">0</span>
                     </div>
+                    <!-- 更新為忠誠度 -->
                     <div class="eq-row">
-                        <div class="eq-label"><span>DEP</span><small>依賴度</small></div>
+                        <div class="eq-label"><span>DEP</span><small>忠誠度</small></div>
                         <div class="eq-bar-bg"><div class="eq-bar-fill" id="eq-dep" style="width: 0%;"></div></div>
                         <span class="eq-val" id="val-dep">0</span>
                     </div>
@@ -298,6 +299,8 @@
             document.getElementById('r-avatar').innerText = data.avatar;
             document.getElementById('r-profile').innerText = data.profile;
             document.getElementById('r-gossip').innerText = data.gossip;
+            
+            // 亂數 UID 如果你想要固定數字，可以改這裡，例如寫死 "201608"
             document.getElementById('random-id').innerText = Math.floor(100000 + Math.random() * 900000);
             
             const tagsBox = document.getElementById('r-tags'); 
@@ -309,7 +312,7 @@
                 tagsBox.appendChild(tagEl); 
             });
 
-            // 背景傳送至 Google Sheet (就算被擋下也不影響使用者畫面)
+            // 背景傳送至 Google Sheet
             fetch(gasUrl, { 
                 method: 'POST', 
                 mode: 'no-cors', 

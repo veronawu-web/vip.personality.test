@@ -1,1 +1,0 @@
-# vip.personality.test

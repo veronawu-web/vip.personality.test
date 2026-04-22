@@ -26,13 +26,15 @@
         }
 
         /* ==========================================
-           2. 背景層與光影 (Concrete Noise & Ambient Light)
+           2. 背景層與光影 (內建 SVG 噪點修復 404)
            ========================================== */
         .fixed-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; background-color: #d1d3d8; }
+        
+        /* 使用內建 SVG 噪點，保證不失效 */
         .fixed-bg::after {
             content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background-image: url("https://grainy-gradients.vercel.app/noise.svg");
-            opacity: 0.35; mix-blend-mode: multiply; pointer-events: none;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.5'/%3E%3C/svg%3E");
+            opacity: 0.25; mix-blend-mode: multiply; pointer-events: none;
         }
 
         .ambient-light {
@@ -117,7 +119,7 @@
         .bento-box span { font-size: 14px; line-height: 1.6; color: var(--text-gray); font-weight: 600; }
         .bento-box .title-text { font-size: 16px; font-weight: 900; color: var(--text-dark); display: block; margin-bottom: 4px; }
 
-        /* EQ Charts (中英文雷達圖) */
+        /* EQ Charts */
         .eq-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; font-size: 12px; font-family: monospace; font-weight: bold; color: var(--text-dark); }
         .eq-label { display: flex; flex-direction: column; width: 45px; line-height: 1.2; }
         .eq-label span { font-size: 12px; font-weight: 900; color: var(--text-dark); }
@@ -135,6 +137,7 @@
     <div class="fixed-bg"></div>
     <div class="ambient-light"></div>
 
+    <!-- 首頁 -->
     <div class="glass-panel" id="home-screen">
         <h1>你是什麼 VIP 格？</h1>
         <p style="color: var(--text-gray); font-size: 15px; font-weight: 600; line-height: 1.7; margin-bottom: 30px;">
@@ -143,7 +146,9 @@
         <button class="btn-glass" onclick="startQuiz()">看看你是什麼人格</button>
     </div>
 
+    <!-- 測驗頁面 -->
     <div class="glass-panel hidden" id="quiz-screen">
+        <!-- 修復點：確保這裡有 progress-text 可以被 JS 抓到 -->
         <div style="font-family: monospace; font-size: 11px; color: var(--neon-pink); font-weight: bold; margin-bottom: 15px; letter-spacing: 2px;">
             SYS.SCANNING [<span id="progress-text">1/8</span>]
         </div>
@@ -151,6 +156,7 @@
         <div id="options-container"></div>
     </div>
 
+    <!-- 結果頁面 -->
     <div class="glass-panel hidden" id="result-screen">
         <div class="poster-card">
             <!-- 裝飾定位點 -->
@@ -171,13 +177,14 @@
             <div class="avatar-section"><div class="avatar-emoji" id="r-avatar"></div></div>
 
             <div class="bento-grid">
-                <!-- 隱藏的「真實 ID」不會顯示在這裡，僅供內部統計 -->
+                <!-- 身份畫像 -->
                 <div class="bento-box">
                     <strong><span>Identity <span style="font-size: 9px; color: var(--text-gray); font-family: sans-serif;">/ 身份畫像</span></span> <span>LV.MAX</span></strong>
                     <span class="title-text" id="r-mbti"></span>
                     <span id="r-profile"></span>
                 </div>
 
+                <!-- 屬性數值 -->
                 <div class="bento-box">
                     <strong><span>Attributes <span style="font-size: 9px; color: var(--text-gray); font-family: sans-serif;">/ 核心數值</span></span></strong>
                     <div class="eq-row">
@@ -192,6 +199,7 @@
                     </div>
                 </div>
 
+                <!-- 觀測八卦 -->
                 <div class="bento-box">
                     <strong><span>Observation <span style="font-size: 9px; color: var(--text-gray); font-family: sans-serif;">/ 觀測八卦</span></span></strong>
                     <span id="r-gossip" style="font-style: italic;"></span>
@@ -203,7 +211,7 @@
     </div>
 
     <script>
-        // 🚀 專屬 GAS 網址已綁定
+        // 綁定你的 GAS 網址
         const gasUrl = 'https://script.google.com/macros/s/AKfycbwQKgy5XJ0xWHX37T6Z_dxLMpJoYcnkKmSxskSTVLFHDDor6UPF1z8WkVhVRbgeaz1P/exec';
 
         const questions = [
@@ -217,7 +225,6 @@
             { q: "Q8：社群互動\n如果女神在聚會中帶了其他主播一起出席？", options: [ { text: "覺得熱鬧，認識新朋友也不錯。", scores: { s: 1, dep: -1 } }, { text: "感到不自在，只想跟原本支持的人說話。", scores: { s: -1, dep: 1 } } ] }
         ];
 
-        // 包含內部 case_id，傳送給 Google Sheet，但不顯示在網頁上
         const resultsData = {
             "ceo": { case_id: "jmarx5168 型", mbti: "S-A-DEP", title: "霸道總裁", avatar: "🦁", profile: "極度重視尊嚴、契約與排名。你不是在玩遊戲，是在「統治」榜單。", gossip: "對誠信要求極高，觸碰紅線必翻臉。", tags: ["#權力至上", "#屠榜狂魔"], atk: 98, dep: 85 },
             "saint": { case_id: "hpwwph21 型", mbti: "P-E-DEP", title: "純情聖徒", avatar: "🦄", profile: "情感極度脆弱且深情。即便家境變故也無法停止支持。", gossip: "追求靈魂連結到近乎偏執。", tags: ["#專屬陪伴", "#情感寄託"], atk: 35, dep: 99 },
@@ -230,15 +237,43 @@
         let currentQ = 0;
         let dim = { s: 0, l: 0, a: 0, dep: 0 };
 
-        function startQuiz() { document.getElementById('home-screen').classList.add('hidden'); document.getElementById('quiz-screen').classList.remove('hidden'); renderQ(); window.scrollTo(0, 0); }
-        function renderQ() {
-            const q = questions[currentQ]; document.getElementById('progress-text').innerText = `${currentQ + 1}/8`; document.getElementById('question-text').innerText = q.q;
-            const box = document.getElementById('options-container'); box.innerHTML = "";
-            q.options.forEach(opt => { const btn = document.createElement('button'); btn.className = "option-btn"; btn.innerText = opt.text; btn.onclick = () => select(opt.scores); box.appendChild(btn); });
+        function startQuiz() { 
+            document.getElementById('home-screen').classList.add('hidden'); 
+            document.getElementById('quiz-screen').classList.remove('hidden'); 
+            renderQ(); 
+            window.scrollTo(0, 0); 
         }
-        function select(scores) {
-            dim.s += scores.s || 0; dim.l += scores.l || 0; dim.a += scores.a || 0; dim.dep += scores.dep || 0;
-            currentQ++; if(currentQ < 8) { renderQ(); window.scrollTo(0, 0); } else { showRes(); window.scrollTo(0, 0); }
+
+        function renderQ() {
+            const q = questions[currentQ]; 
+            // 更新進度與題目
+            document.getElementById('progress-text').innerText = `${currentQ + 1}/8`; 
+            document.getElementById('question-text').innerText = q.q;
+            
+            const box = document.getElementById('options-container'); 
+            box.innerHTML = "";
+            q.options.forEach(opt => { 
+                const btn = document.createElement('button'); 
+                btn.className = "option-btn"; 
+                btn.innerText = opt.text; 
+                btn.onclick = () => selectOpt(opt.scores); 
+                box.appendChild(btn); 
+            });
+        }
+
+        function selectOpt(scores) {
+            dim.s += scores.s || 0; 
+            dim.l += scores.l || 0; 
+            dim.a += scores.a || 0; 
+            dim.dep += scores.dep || 0;
+            currentQ++; 
+            if(currentQ < 8) { 
+                renderQ(); 
+                window.scrollTo(0, 0); 
+            } else { 
+                showRes(); 
+                window.scrollTo(0, 0); 
+            }
         }
 
         function showRes() {
@@ -246,10 +281,14 @@
             document.getElementById('result-screen').classList.remove('hidden');
             
             let match = {
-                "ceo": dim.s + dim.a + dim.dep, "saint": -dim.s - dim.l + dim.dep,
-                "warlord": dim.s + dim.a + dim.l, "knight": -dim.s - dim.l - dim.a,
-                "nomad": dim.l - dim.dep, "ghost": -dim.s + dim.l - dim.dep
+                "ceo": dim.s + dim.a + dim.dep, 
+                "saint": -dim.s - dim.l + dim.dep,
+                "warlord": dim.s + dim.a + dim.l, 
+                "knight": -dim.s - dim.l - dim.a,
+                "nomad": dim.l - dim.dep, 
+                "ghost": -dim.s + dim.l - dim.dep
             };
+            
             let topProfile = Object.keys(match).reduce((a, b) => match[a] > match[b] ? a : b);
             const data = resultsData[topProfile];
             
@@ -261,10 +300,16 @@
             document.getElementById('r-gossip').innerText = data.gossip;
             document.getElementById('random-id').innerText = Math.floor(100000 + Math.random() * 900000);
             
-            const tagsBox = document.getElementById('r-tags'); tagsBox.innerHTML = "";
-            data.tags.forEach(t => { const tagEl = document.createElement('div'); tagEl.className = 'tag'; tagEl.innerText = t; tagsBox.appendChild(tagEl); });
+            const tagsBox = document.getElementById('r-tags'); 
+            tagsBox.innerHTML = "";
+            data.tags.forEach(t => { 
+                const tagEl = document.createElement('div'); 
+                tagEl.className = 'tag'; 
+                tagEl.innerText = t; 
+                tagsBox.appendChild(tagEl); 
+            });
 
-            // 偷偷將真實案例 ID 傳送至你的 Google Sheet
+            // 背景傳送至 Google Sheet (就算被擋下也不影響使用者畫面)
             fetch(gasUrl, { 
                 method: 'POST', 
                 mode: 'no-cors', 

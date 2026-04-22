@@ -30,7 +30,6 @@
            ========================================== */
         .fixed-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; background-color: #d1d3d8; }
         
-        /* 使用內建 SVG 噪點，保證不失效 */
         .fixed-bg::after {
             content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.5'/%3E%3C/svg%3E");
@@ -169,8 +168,7 @@
                 </div>
                 <div class="barcode-area">
                     <span style="font-size: 14px;">||| | || ||||</span><br>
-                    <!-- BUG修復：把 id= 201608 改回 random-id，若你需要固定數字可以寫在 JS 裡 -->
-                    UID: <span id="random-id"></span>
+                    UID: <span id="random-id">201608</span>
                 </div>
             </div>
 
@@ -247,19 +245,24 @@
 
         function renderQ() {
             const q = questions[currentQ]; 
-            // 更新進度與題目
-            document.getElementById('progress-text').innerText = `${currentQ + 1}/8`; 
-            document.getElementById('question-text').innerText = q.q;
+            // 防呆設置：加入 ?. 避免 HTML 被修改時報錯
+            const progressEl = document.getElementById('progress-text');
+            if (progressEl) progressEl.innerText = `${currentQ + 1}/8`; 
+            
+            const questionEl = document.getElementById('question-text');
+            if (questionEl) questionEl.innerText = q.q;
             
             const box = document.getElementById('options-container'); 
-            box.innerHTML = "";
-            q.options.forEach(opt => { 
-                const btn = document.createElement('button'); 
-                btn.className = "option-btn"; 
-                btn.innerText = opt.text; 
-                btn.onclick = () => selectOpt(opt.scores); 
-                box.appendChild(btn); 
-            });
+            if (box) {
+                box.innerHTML = "";
+                q.options.forEach(opt => { 
+                    const btn = document.createElement('button'); 
+                    btn.className = "option-btn"; 
+                    btn.innerText = opt.text; 
+                    btn.onclick = () => selectOpt(opt.scores); 
+                    box.appendChild(btn); 
+                });
+            }
         }
 
         function selectOpt(scores) {
@@ -293,24 +296,23 @@
             let topProfile = Object.keys(match).reduce((a, b) => match[a] > match[b] ? a : b);
             const data = resultsData[topProfile];
             
-            // 寫入 UI 介面
-            document.getElementById('r-mbti').innerText = data.mbti;
-            document.getElementById('r-title').innerText = data.title;
-            document.getElementById('r-avatar').innerText = data.avatar;
-            document.getElementById('r-profile').innerText = data.profile;
-            document.getElementById('r-gossip').innerText = data.gossip;
-            
-            // 亂數 UID 如果你想要固定數字，可以改這裡，例如寫死 "201608"
-            document.getElementById('random-id').innerText = Math.floor(100000 + Math.random() * 900000);
+            // 安全寫入 UI 介面 (防呆機制)
+            if(document.getElementById('r-mbti')) document.getElementById('r-mbti').innerText = data.mbti;
+            if(document.getElementById('r-title')) document.getElementById('r-title').innerText = data.title;
+            if(document.getElementById('r-avatar')) document.getElementById('r-avatar').innerText = data.avatar;
+            if(document.getElementById('r-profile')) document.getElementById('r-profile').innerText = data.profile;
+            if(document.getElementById('r-gossip')) document.getElementById('r-gossip').innerText = data.gossip;
             
             const tagsBox = document.getElementById('r-tags'); 
-            tagsBox.innerHTML = "";
-            data.tags.forEach(t => { 
-                const tagEl = document.createElement('div'); 
-                tagEl.className = 'tag'; 
-                tagEl.innerText = t; 
-                tagsBox.appendChild(tagEl); 
-            });
+            if (tagsBox) {
+                tagsBox.innerHTML = "";
+                data.tags.forEach(t => { 
+                    const tagEl = document.createElement('div'); 
+                    tagEl.className = 'tag'; 
+                    tagEl.innerText = t; 
+                    tagsBox.appendChild(tagEl); 
+                });
+            }
 
             // 背景傳送至 Google Sheet
             fetch(gasUrl, { 
@@ -319,12 +321,17 @@
                 body: JSON.stringify({ title: data.title, case_id: data.case_id, mbti_tag: data.mbti }) 
             }).catch(err => console.log('Data sync ignored.'));
 
-            // 動態跑數據條動畫
+            // 動態跑數據條動畫 (加入防呆)
             setTimeout(() => {
-                document.getElementById('eq-atk').style.width = data.atk + '%';
-                document.getElementById('val-atk').innerText = data.atk;
-                document.getElementById('eq-dep').style.width = data.dep + '%';
-                document.getElementById('val-dep').innerText = data.dep;
+                const eqAtk = document.getElementById('eq-atk');
+                const valAtk = document.getElementById('val-atk');
+                const eqDep = document.getElementById('eq-dep');
+                const valDep = document.getElementById('val-dep');
+
+                if(eqAtk) eqAtk.style.width = data.atk + '%';
+                if(valAtk) valAtk.innerText = data.atk;
+                if(eqDep) eqDep.style.width = data.dep + '%';
+                if(valDep) valDep.innerText = data.dep;
             }, 100);
         }
     </script>
